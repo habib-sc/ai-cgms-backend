@@ -1,7 +1,7 @@
 import { Schema, model, Document, Types } from "mongoose";
 
-// interface for the Generate Content document
-export interface IGeneratedContent extends Document {
+// interface for the  Content document
+export interface IContent extends Document {
   userId: Types.ObjectId;
   prompt: string;
   contentType: string;
@@ -13,7 +13,7 @@ export interface IGeneratedContent extends Document {
 }
 
 // Mongoose schema
-const GeneratedContentSchema = new Schema<IGeneratedContent>(
+const ContentSchema = new Schema<IContent>(
   {
     userId: {
       type: Schema.Types.ObjectId,
@@ -61,7 +61,4 @@ const GeneratedContentSchema = new Schema<IGeneratedContent>(
 );
 
 // export thee model
-export const GeneratedContent = model<IGeneratedContent>(
-  "GeneratedContent",
-  GeneratedContentSchema
-);
+export const Content = model<IContent>("Content", ContentSchema);
