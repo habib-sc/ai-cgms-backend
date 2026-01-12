@@ -1,14 +1,15 @@
 import express from "express";
 import cors from "cors";
 import { errorHandler } from "./middlewares/error.middleware";
-import authRoutes from "./modules/auth/auth.route";
+import router from "./routes";
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-app.use("/api/auth", authRoutes);
+// app route entry
+app.use("/api/v1", router);
 
 // Middleware to parse JSON bodies
 app.use(express.json());
