@@ -35,7 +35,7 @@
 
     // Recommended Options
     "strict": true,
-    "jsx": "react-jsx",
+    "lib": ["esnext"],
     "verbatimModuleSyntax": false,
     "isolatedModules": true,
     "noUncheckedSideEffectImports": true,

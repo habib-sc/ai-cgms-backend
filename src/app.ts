@@ -10,6 +10,9 @@ app.use(express.json());
 
 app.use("/api/auth", authRoutes);
 
+// Middleware to parse JSON bodies
+app.use(express.json());
+
 // global error handler (always last)
 app.use(errorHandler);
 
