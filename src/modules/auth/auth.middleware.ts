@@ -1,24 +1,26 @@
+import { Request, Response, NextFunction } from "express";
+import jwt from "jsonwebtoken";
 import { ApiError } from "../../utils/ApiError";
-import { signToken } from "../../utils/jwt";
-import { User } from "../user/user.model";
+import { env } from "../../config/env";
 
-export const register = async (email: string, password: string) => {
-  const exists = await User.findOne({ email });
-  if (exists) throw new ApiError(409, "User already exists");
+export interface AuthRequest extends Request {
+  user?: any;
+}
 
-  const user = await User.create({ email, password });
+export const protect = (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  const token = req.headers.authorization?.split(" ")[1];
 
-  const token = signToken({ id: user._id });
+  if (!token) return next(new ApiError(401, "Not authenticated"));
 
-  return { user, token };
-};
-
-export const login = async (email: string, password: string) => {
-  const user = await User.findOne({ email });
-  if (!user || !(await user.comparePassword(password)))
-    throw new ApiError(401, "Invalid credentials");
-
-  const token = signToken({ id: user._id });
-
-  return { user, token };
+  try {
+    const decoded = jwt.verify(token, env.JWT_ACCESS_SECRET);
+    req.user = decoded;
+    next();
+  } catch {
+    next(new ApiError(401, "Invalid token"));
+  }
 };

@@ -1,9 +1,17 @@
 import dotenv from "dotenv";
+import { z } from "zod";
+
 dotenv.config();
 
-export const env = {
-  PORT: process.env.PORT || 5000,
-  MONGO_URI: process.env.MONGO_URI!,
-  JWT_SECRET: process.env.JWT_SECRET!,
-  JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || "7d",
-};
+const envSchema = z.object({
+  PORT: z.string().default("5000"),
+  MONGO_URI: z.string().min(1, "MONGO_URI is required"),
+  JWT_ACCESS_SECRET: z.string().min(1, "JWT_ACCESS_SECRET is required"),
+  JWT_REFRESH_SECRET: z.string().min(1, "JWT_REFRESH_SECRET is required"),
+  JWT_ACCESS_EXPIRES_IN: z.string().default("15m"),
+  JWT_REFRESH_EXPIRES_IN: z.string().default("7d"),
+  REDIS_URL: z.string().min(1, "REDIS_URL is required"),
+  GEMINI_API_KEY: z.string().min(1, "GEMINI_API_KEY is required"),
+});
+
+export const env = envSchema.parse(process.env);
