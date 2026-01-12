@@ -3,6 +3,7 @@ import { signAccessToken, signRefreshToken } from "../../utils/jwt";
 import { IUser, User } from "../user/user.model";
 import bcrypt from "bcryptjs";
 
+// register service
 export const register = async (userInfo: IUser) => {
   if (!userInfo.name || !userInfo.email || !userInfo.password)
     throw new ApiError(400, "Please provide name, email, and password");
@@ -33,6 +34,7 @@ export const register = async (userInfo: IUser) => {
   return { user, accessToken, refreshToken };
 };
 
+// login service
 export const login = async ({
   email,
   password,
@@ -62,4 +64,14 @@ export const login = async ({
   });
 
   return { user: userInfo, accessToken, refreshToken };
+};
+
+// profile(me)
+export const profile = async (userId: string): Promise<Partial<IUser>> => {
+  const user = await User.findById(userId);
+  if (!user) throw new ApiError(404, "User not found");
+
+  const { password, ...userInfo } = user.toObject();
+
+  return userInfo;
 };
