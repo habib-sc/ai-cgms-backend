@@ -5,10 +5,13 @@ export interface IContent extends Document {
   userId: Types.ObjectId;
   prompt: string;
   contentType: string;
-  generatedContent?: string; // Optional, as it will be populated later
-  contentError?: string; // Optional, as it will be populated later
+  title?: string;
+  tags?: string[];
+  notes?: string;
+  generatedContent?: string;
+  contentError?: string;
   status: "pending" | "completed" | "failed";
-  jobId: string; // Unique ID for the queue job
+  jobId: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -58,6 +61,20 @@ const ContentSchema = new Schema<IContent>(
       type: String,
       required: [true, "Job ID is required"],
       unique: true,
+    },
+    title: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    tags: {
+      type: [String],
+      default: [],
+    },
+    notes: {
+      type: String,
+      trim: true,
+      default: "",
     },
   },
   {
