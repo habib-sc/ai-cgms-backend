@@ -1,5 +1,7 @@
+import { StatusCodes } from "http-status-codes";
 import { env } from "../../config/env";
 import { contentGenerationQueue } from "../../config/queue";
+import { ApiError } from "../../utils/ApiError";
 import { Content } from "./content.model";
 
 // generate content
@@ -173,7 +175,7 @@ export const regenerateContent = async (
 
 // delete content
 export const deleteContent = async (userId: string, id: string) => {
-  const doc = await Content.findOneAndDelete({ _id: id, userId });
-  if (!doc) throw new Error("Content not found");
-  return doc;
+  const deleted = await Content.findOneAndDelete({ _id: id, userId });
+  if (!deleted) throw new ApiError(StatusCodes.NOT_FOUND, "Content not found");
+  return deleted;
 };

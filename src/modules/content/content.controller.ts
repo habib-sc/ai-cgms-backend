@@ -28,7 +28,7 @@ export const generateContentController = catchAsync(
 
     // return immediate response with 202
     res.status(StatusCodes.ACCEPTED).json({
-      status: "success",
+      success: true,
       message: "Content generation job enqueued successfully.",
       data: {
         jobId: newContent.jobId,
@@ -57,7 +57,8 @@ export const getContentStatusController = catchAsync(
     const content = await getJobStatusByJobId(userId, jobId);
 
     res.status(StatusCodes.OK).json({
-      status: "success",
+      success: true,
+      message: "Content job status retrieved successfully",
       data: content,
     });
   }
@@ -67,9 +68,12 @@ export const listContentsController = catchAsync(
   async (req: Request, res: Response) => {
     const userId = (req as any).user.id;
     const result = await listContents(userId, req.query);
-    res
-      .status(StatusCodes.OK)
-      .json({ status: "success", data: result.items, meta: result.meta });
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Contents found",
+      data: result.items,
+      meta: result.meta,
+    });
   }
 );
 
@@ -78,16 +82,9 @@ export const getContentByIdController = catchAsync(
     const userId = (req as any).user.id;
     const { id } = req.params as any;
     const doc = await getContentById(userId, id);
-    res.status(StatusCodes.OK).json({ status: "success", data: doc });
-  }
-);
-
-export const getContentByJobIdController = catchAsync(
-  async (req: Request, res: Response) => {
-    const userId = (req as any).user.id;
-    const { jobId } = req.params as any;
-    const doc = await getContentById(userId, jobId);
-    res.status(StatusCodes.OK).json({ status: "success", data: doc });
+    res
+      .status(StatusCodes.OK)
+      .json({ success: true, message: "Content found", data: doc });
   }
 );
 
@@ -96,7 +93,9 @@ export const updateContentMetaController = catchAsync(
     const userId = (req as any).user.id;
     const { id } = req.params as any;
     const doc = await updateContentMeta(userId, id, req.body);
-    res.status(StatusCodes.OK).json({ status: "success", data: doc });
+    res
+      .status(StatusCodes.OK)
+      .json({ success: true, message: "Updated content metadata", data: doc });
   }
 );
 
@@ -106,7 +105,7 @@ export const regenerateContentController = catchAsync(
     const { id } = req.params as any;
     const updated = await regenerateContent(userId, id, req.body);
     res.status(StatusCodes.ACCEPTED).json({
-      status: "success",
+      success: true,
       message: "Regeneration enqueued",
       data: { jobId: (updated as any).jobId, contentId: (updated as any)._id },
     });
@@ -117,9 +116,13 @@ export const deleteContentController = catchAsync(
   async (req: Request, res: Response) => {
     const userId = (req as any).user.id;
     const { id } = req.params as any;
-    await deleteContent(userId, id);
-    res.status(StatusCodes.NO_CONTENT).json({
-      status: "success",
+    const deleted = await deleteContent(userId, id);
+
+    if (!deleted?._id)
+      throw new ApiError(StatusCodes.BAD_REQUEST, "Content not deleted");
+
+    res.status(StatusCodes.OK).json({
+      success: true,
       message: "Content deleted successfully",
     });
   }
