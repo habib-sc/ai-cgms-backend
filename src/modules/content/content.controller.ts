@@ -64,6 +64,7 @@ export const getContentStatusController = catchAsync(
   }
 );
 
+// list contents controller
 export const listContentsController = catchAsync(
   async (req: Request, res: Response) => {
     const userId = (req as any).user.id;
@@ -71,12 +72,13 @@ export const listContentsController = catchAsync(
     res.status(StatusCodes.OK).json({
       success: true,
       message: "Contents found",
-      data: result.items,
       meta: result.meta,
+      data: result.items,
     });
   }
 );
 
+// get content by id controller
 export const getContentByIdController = catchAsync(
   async (req: Request, res: Response) => {
     const userId = (req as any).user.id;
@@ -88,6 +90,7 @@ export const getContentByIdController = catchAsync(
   }
 );
 
+// update content metadata controller
 export const updateContentMetaController = catchAsync(
   async (req: Request, res: Response) => {
     const userId = (req as any).user.id;
@@ -99,6 +102,7 @@ export const updateContentMetaController = catchAsync(
   }
 );
 
+// regenerate content controller
 export const regenerateContentController = catchAsync(
   async (req: Request, res: Response) => {
     const userId = (req as any).user.id;
@@ -112,6 +116,7 @@ export const regenerateContentController = catchAsync(
   }
 );
 
+// delete content controller
 export const deleteContentController = catchAsync(
   async (req: Request, res: Response) => {
     const userId = (req as any).user.id;

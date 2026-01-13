@@ -31,9 +31,6 @@ export const listContentQuerySchema = z.object({
 });
 
 export const getByIdSchema = z.object({ params: z.object({ id: z.string() }) });
-export const getByJobIdSchema = z.object({
-  params: z.object({ jobId: z.string() }),
-});
 
 export const updateContentMetaSchema = z.object({
   params: z.object({ id: z.string() }),

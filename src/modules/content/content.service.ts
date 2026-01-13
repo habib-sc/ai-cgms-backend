@@ -83,7 +83,14 @@ export const listContents = async (
   }
   if (query.search) {
     const r = new RegExp(query.search, "i");
-    filter.$or = [{ prompt: r }, { generatedContent: r }];
+    filter.$or = [
+      { prompt: r },
+      { generatedContent: r },
+      { tags: r },
+      { notes: r },
+      { contentType: r },
+      { title: r },
+    ];
   }
   const [items, total] = await Promise.all([
     Content.find(filter)
