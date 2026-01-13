@@ -17,4 +17,6 @@ export interface ContentGenerationJob {
   prompt: string;
   contentType: string;
   userId: string;
+  model?: string;
+  provider?: "gemini" | "openai";
 }

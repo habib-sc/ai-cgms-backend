@@ -1,13 +1,18 @@
-import { env } from "node:process";
+import { env } from "../../config/env";
 import { contentGenerationQueue } from "../../config/queue";
 import { Content } from "./content.model";
 
 // generate content
 export const generateContent = async (
-  bodyData: { prompt: string; contentType: string },
+  bodyData: {
+    prompt: string;
+    contentType: string;
+    model?: string;
+    provider?: "gemini" | "openai";
+  },
   userId: string
 ) => {
-  const { prompt, contentType } = bodyData;
+  const { prompt, contentType, model, provider } = bodyData;
 
   // creating new content
   const newContent = await Content.create({
@@ -26,6 +31,12 @@ export const generateContent = async (
       prompt,
       contentType,
       userId,
+      provider: provider || env.DEFAULT_AI_PROVIDER || "gemini",
+      model:
+        model ||
+        ((provider || env.DEFAULT_AI_PROVIDER || "gemini") === "openai"
+          ? env.DEFAULT_OPENAI_MODEL
+          : env.DEFAULT_GEMINI_MODEL),
     },
     {
       delay: env.QUEUE_JOB_DELAY_MS ? Number(env.QUEUE_JOB_DELAY_MS) : 60000,

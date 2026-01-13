@@ -1,6 +1,7 @@
 import { Worker, Job } from "bullmq";
 import IORedis from "ioredis";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import OpenAI from "openai";
 import { env } from "./config/env";
 import { connectDB } from "./config/db";
 import { ContentGenerationJob } from "./config/queue";
@@ -34,13 +35,39 @@ console.log("[Worker] Initializing Google Generative AI...");
 const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY);
 console.log("[Worker] Google Generative AI initialized.");
 
+// Initialize OpenAI
+console.log("[Worker] Initializing OpenAI...");
+const openai = env.OPENAI_API_KEY
+  ? new OpenAI({ apiKey: env.OPENAI_API_KEY })
+  : null;
+console.log("[Worker] OpenAI initialized.");
+const getGuidelines = (type: string) => {
+  switch (type) {
+    case "blog-post-outline":
+      return "Start directly with a working title, then H2 sections each with 3–5 bullets. No meta prefaces.";
+    case "blog-post":
+      return "Write a complete blog with H1 title, intro, several H2/H3 sections, and a conclusion. No meta prefaces.";
+    case "product-description":
+      return "Provide a concise product description with features and benefits. No meta prefaces.";
+    case "social-media-caption":
+      return "Return a single caption under 280 characters, catchy and concise. No meta prefaces.";
+    case "email-subject-line":
+      return "Return 5 short subject lines, each on its own line. No meta prefaces.";
+    case "ad-copy":
+      return "Return concise ad copy (headline + body). No meta prefaces.";
+    default:
+      return "Return only the requested content and avoid meta prefaces.";
+  }
+};
+
 // the worker
 const contentGenerationWorker = new Worker<ContentGenerationJob>(
   "contentGeneration", // Must match the queue name
   async (job: Job<ContentGenerationJob>) => {
     console.log(`[Worker] Job ${job.id} started processing.`); // Added for early debugging
+    const provider = job.data.provider || env.DEFAULT_AI_PROVIDER || "gemini";
     console.log(
-      `[Worker] Processing job ${job.id} for contentId: ${job.data.contentId}, prompt: "${job.data.prompt}", contentType: "${job.data.contentType}"`
+      `[Worker] Processing job ${job.id} for contentId: ${job.data.contentId}, prompt: "${job.data.prompt}", contentType: "${job.data.contentType}", model: "${job.data.model}", provider: "${provider}"`
     );
 
     let generatedContent = "";
@@ -49,19 +76,52 @@ const contentGenerationWorker = new Worker<ContentGenerationJob>(
     let errorMessage: string | undefined;
 
     try {
-      // Get the generative model
-      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-
-      // Construct the AI prompt based on content type
-      const fullPrompt = `Generate a ${job.data.contentType} based on the following topic/prompt: "${job.data.prompt}".`;
-
-      // Call the Google Gemini API
-      const result = await model.generateContent(fullPrompt);
-      const response = await result.response;
-      generatedContent = response.text();
-      status = "completed";
-
-      console.log(`[Worker] Job ${job.id} AI generation successful.`);
+      if (provider === "openai" && openai) {
+        const openaiModel =
+          job.data.model && job.data.model.startsWith("gpt")
+            ? job.data.model
+            : env.DEFAULT_OPENAI_MODEL || "gpt-3.5-turbo";
+        const params: any = {
+          model: openaiModel,
+          messages: [
+            {
+              role: "system",
+              content: `You are a writing assistant. Return only the ${
+                job.data.contentType
+              }. ${getGuidelines(job.data.contentType)}`,
+            },
+            {
+              role: "user",
+              content: `Topic: "${job.data.prompt}".`,
+            },
+          ],
+        };
+        const completion = await openai.chat.completions.create(params);
+        const raw = completion.choices[0]?.message?.content || "";
+        generatedContent = raw;
+        status = "completed";
+        console.log(
+          `[Worker] Job ${job.id} AI generation successful using OpenAI.`
+        );
+      } else if (provider === "gemini" && genAI) {
+        const geminiModel =
+          job.data.model && job.data.model.startsWith("gemini")
+            ? job.data.model
+            : env.DEFAULT_GEMINI_MODEL || "gemini-2.5-flash";
+        const model = genAI.getGenerativeModel({
+          model: geminiModel,
+        });
+        const fullPrompt = `Produce ${job.data.contentType} for topic "${
+          job.data.prompt
+        }". ${getGuidelines(job.data.contentType)} Output only the content.`;
+        const result = await model.generateContent(fullPrompt);
+        const response = await result.response;
+        generatedContent = response.text();
+        status = "completed";
+        console.log(
+          `[Worker] Job ${job.id} AI generation successful using Gemini.`
+        );
+      }
     } catch (error: any) {
       console.error(`[Worker] Job ${job.id} AI generation failed:`, error);
       errorMessage = error.message || "AI generation failed";

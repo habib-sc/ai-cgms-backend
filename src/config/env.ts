@@ -12,6 +12,10 @@ const envSchema = z.object({
   JWT_REFRESH_EXPIRES_IN: z.string().default("7d"),
   REDIS_URL: z.string().min(1, "REDIS_URL is required"),
   GEMINI_API_KEY: z.string().min(1, "GEMINI_API_KEY is required"),
+  OPENAI_API_KEY: z.string().optional(),
+  DEFAULT_AI_PROVIDER: z.enum(["gemini", "openai"]).default("gemini"),
+  DEFAULT_OPENAI_MODEL: z.string().default("gpt-3.5-turbo"),
+  DEFAULT_GEMINI_MODEL: z.string().default("gemini-2.5-flash"),
   QUEUE_JOB_DELAY_MS: z.string().default("60000"),
 });
 
