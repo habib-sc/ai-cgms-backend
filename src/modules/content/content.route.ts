@@ -13,11 +13,14 @@ const router = Router();
 // Protect all content routes
 router.use(protect);
 
+// generate content
 router.post(
   "/generate",
   validate(generateContentSchema),
   generateContentController
 );
+
+// job status
 router.get("/:jobId/status", getContentStatusController);
 
 export const contentRoutes = router;

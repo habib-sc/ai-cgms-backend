@@ -12,6 +12,7 @@ const envSchema = z.object({
   JWT_REFRESH_EXPIRES_IN: z.string().default("7d"),
   REDIS_URL: z.string().min(1, "REDIS_URL is required"),
   GEMINI_API_KEY: z.string().min(1, "GEMINI_API_KEY is required"),
+  QUEUE_JOB_DELAY_MS: z.string().default("60000"),
 });
 
 export const env = envSchema.parse(process.env);

@@ -1,49 +1,22 @@
 import { Request, Response, NextFunction } from "express";
-import { Content } from "./content.model";
-import { contentGenerationQueue } from "../../config/queue";
 import { catchAsync } from "../../utils/catchAsync";
 import { StatusCodes } from "http-status-codes";
 import { ApiError } from "../../utils/ApiError";
-
-// delay for the job in milliseconds (1 minute)
-const JOB_DELAY_MS = 60000;
+import { generateContent, getJobStatusByJobId } from "./content.service";
+import { env } from "../../config/env";
 
 export const generateContentController = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const userId = (req as any).user.id;
-    const { prompt, contentType } = req.body;
 
-    if (!userId)
-      throw new ApiError(StatusCodes.UNAUTHORIZED, "User not authenticated");
+    // generate content
+    const newContent = await generateContent(req.body, userId);
 
-    // creating new content
-    const newContent = await Content.create({
-      userId,
-      prompt,
-      contentType,
-      status: "pending",
-      jobId: new Content()._id.toString(), // mongo db _id as jobId
-    });
-
-    // enqueue the job into BullMQ with delay
-    const job = await contentGenerationQueue.add(
-      "generate-ai-content", // Job name
-      {
-        contentId: newContent._id.toString(),
-        prompt,
-        contentType,
-        userId,
-      },
-      {
-        delay: JOB_DELAY_MS,
-        attempts: 3,
-        backoff: {
-          type: "exponential",
-          delay: 5000, // Start with 5 seconds backoff
-        },
-        jobId: newContent.jobId, // same jobId for BullMQ
-      }
-    );
+    if (!newContent.jobId)
+      throw new ApiError(
+        StatusCodes.INTERNAL_SERVER_ERROR,
+        "Failed to generate content job ID"
+      );
 
     // return immediate response with 202
     res.status(StatusCodes.ACCEPTED).json({
@@ -51,7 +24,11 @@ export const generateContentController = catchAsync(
       message: "Content generation job enqueued successfully.",
       data: {
         jobId: newContent.jobId,
-        expectedCompletion: new Date(Date.now() + JOB_DELAY_MS),
+        expectedCompletion: new Date(
+          Date.now() + env.QUEUE_JOB_DELAY_MS
+            ? Number(env.QUEUE_JOB_DELAY_MS)
+            : 60000
+        ),
         contentId: newContent._id,
       },
     });
@@ -61,31 +38,21 @@ export const generateContentController = catchAsync(
 // polling job status controller
 export const getContentStatusController = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const { jobId } = req.params;
+    const jobId = req.params.jobId as string;
     const userId = (req as any).user.id;
 
     if (!userId)
       throw new ApiError(StatusCodes.UNAUTHORIZED, "User not authenticated");
 
-    const content = await Content.findOne({
-      jobId: jobId as string,
-      userId: userId as string,
-    });
+    if (!jobId)
+      throw new ApiError(StatusCodes.BAD_REQUEST, "Job ID is required");
 
-    if (!content) {
-      throw new ApiError(StatusCodes.NOT_FOUND, "Content job not found");
-    }
+    // fetch job status from BullMQ
+    const content = await getJobStatusByJobId(userId, jobId);
 
     res.status(StatusCodes.OK).json({
       status: "success",
-      data: {
-        jobId: content.jobId,
-        contentId: content._id,
-        status: content.status,
-        generatedContent: content?.generatedContent || "", // empty if pending
-        createdAt: content.createdAt,
-        updatedAt: content.updatedAt,
-      },
+      data: content,
     });
   }
 );

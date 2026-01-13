@@ -6,6 +6,7 @@ export interface IContent extends Document {
   prompt: string;
   contentType: string;
   generatedContent?: string; // Optional, as it will be populated later
+  contentError?: string; // Optional, as it will be populated later
   status: "pending" | "completed" | "failed";
   jobId: string; // Unique ID for the queue job
   createdAt: Date;
@@ -40,6 +41,10 @@ const ContentSchema = new Schema<IContent>(
       trim: true,
     },
     generatedContent: {
+      type: String,
+      default: "",
+    },
+    contentError: {
       type: String,
       default: "",
     },
