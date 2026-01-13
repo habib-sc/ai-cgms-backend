@@ -32,7 +32,10 @@ console.log("[Worker] Redis connection initiated.");
 
 // Initialize Google Generative AI
 console.log("[Worker] Initializing Google Generative AI...");
-const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY);
+let genAI: GoogleGenerativeAI | null = null;
+if (env.GEMINI_API_KEY) {
+  genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY);
+}
 console.log("[Worker] Google Generative AI initialized.");
 
 // Initialize OpenAI
