@@ -29,6 +29,16 @@ connection.on("error", (err) =>
 connection.on("close", () => console.log("[Worker] Redis connection closed"));
 
 console.log("[Worker] Redis connection initiated.");
+const pub = new IORedis(env.REDIS_URL, {
+  maxRetriesPerRequest: null,
+  enableReadyCheck: false,
+});
+const publishStatus = (payload: any) =>
+  pub
+    .publish("job-status", JSON.stringify(payload))
+    .catch((err) =>
+      console.error("[Worker] Failed to publish job-status:", err)
+    );
 
 // Initialize Google Generative AI
 console.log("[Worker] Initializing Google Generative AI...");
@@ -160,16 +170,38 @@ const contentGenerationWorker = new Worker<ContentGenerationJob>(
 // Handle worker events for logging
 contentGenerationWorker.on("active", (job) => {
   console.log(`[Worker] Job ${job.id} is now active!`);
+  publishStatus({
+    type: "content-generation",
+    jobId: job.id,
+    userId: (job.data as any).userId,
+    status: "active",
+    contentId: (job.data as any).contentId,
+  });
 });
 
 contentGenerationWorker.on("completed", (job) => {
   console.log(`[Worker] Job ${job.id} has completed!`);
+  publishStatus({
+    type: "content-generation",
+    jobId: job.id,
+    userId: (job.data as any).userId,
+    status: "completed",
+    contentId: (job.data as any).contentId,
+  });
 });
 
 contentGenerationWorker.on("failed", (job, err) => {
   console.error(
     `[Worker] Job ${job?.id} has failed with error: ${err.message}`
   );
+  publishStatus({
+    type: "content-generation",
+    jobId: job?.id,
+    userId: (job?.data as any)?.userId,
+    status: "failed",
+    contentId: (job?.data as any)?.contentId,
+    error: err.message,
+  });
 });
 
 contentGenerationWorker.on("error", (err) => {

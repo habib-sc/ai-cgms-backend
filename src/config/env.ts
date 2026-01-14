@@ -17,6 +17,7 @@ const envSchema = z.object({
   DEFAULT_OPENAI_MODEL: z.string().default("gpt-3.5-turbo"),
   DEFAULT_GEMINI_MODEL: z.string().default("gemini-2.5-flash"),
   QUEUE_JOB_DELAY_MS: z.string().default("60000"),
+  FRONTEND_ORIGIN: z.string().default("http://localhost:3000"),
 });
 
 export const env = envSchema.parse(process.env);
