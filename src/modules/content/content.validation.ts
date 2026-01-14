@@ -15,6 +15,7 @@ export const generateContentSchema = z.object({
     contentType: z.enum(contentTypes),
     model: z.string().optional(),
     provider: z.enum(["gemini", "openai"]).optional(),
+    title: z.string().max(200).optional(),
   }),
 });
 
