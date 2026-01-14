@@ -32,10 +32,9 @@ export const generateContentController = catchAsync(
       message: "Content generation job enqueued successfully.",
       data: {
         jobId: newContent.jobId,
-        expectedCompletion: new Date(
-          Date.now() +
-            (env.QUEUE_JOB_DELAY_MS ? Number(env.QUEUE_JOB_DELAY_MS) : 60000)
-        ),
+        expectedDelayMs: env.QUEUE_JOB_DELAY_MS
+          ? Number(env.QUEUE_JOB_DELAY_MS)
+          : 60000,
         contentId: newContent._id,
       },
     });

@@ -10,7 +10,7 @@ export interface IContent extends Document {
   notes?: string;
   generatedContent?: string;
   contentError?: string;
-  status: "pending" | "completed" | "failed";
+  status: "pending" | "processing" | "queued" | "completed" | "failed";
   jobId: string;
   createdAt: Date;
   updatedAt: Date;
@@ -53,7 +53,7 @@ const ContentSchema = new Schema<IContent>(
     },
     status: {
       type: String,
-      enum: ["pending", "completed", "failed"],
+      enum: ["pending", "processing", "queued", "completed", "failed"],
       default: "pending",
       required: true,
     },

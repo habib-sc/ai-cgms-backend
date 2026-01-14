@@ -168,13 +168,18 @@ const contentGenerationWorker = new Worker<ContentGenerationJob>(
 );
 
 // Handle worker events for logging
-contentGenerationWorker.on("active", (job) => {
+contentGenerationWorker.on("active", async (job) => {
   console.log(`[Worker] Job ${job.id} is now active!`);
+  try {
+    await Content.findByIdAndUpdate((job.data as any).contentId, {
+      status: "processing",
+    });
+  } catch {}
   publishStatus({
     type: "content-generation",
     jobId: job.id,
     userId: (job.data as any).userId,
-    status: "active",
+    status: "processing",
     contentId: (job.data as any).contentId,
   });
 });
